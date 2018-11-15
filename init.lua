@@ -57,6 +57,7 @@ minetest.register_entity("hangglider:glider", {
 			end
 		end
 		if not canExist then 
+			self.object:set_detach()
 			self.object:remove() 
 		end
 	end
@@ -105,10 +106,6 @@ minetest.register_craftitem("hangglider:hangglider", {
 			minetest.add_entity(user:get_pos(), "hangglider:glider"):set_attach(user, "", {x=0,y=0,z=0}, {x=0,y=0,z=0})
 			
 		elseif hangglider.use[user:get_player_name()] then --Unequip
-			user:set_physics_override({
-				gravity = 1,
-				jump = 1,
-			})
 			hangglider.use[user:get_player_name()] = false
 		end
 	end
