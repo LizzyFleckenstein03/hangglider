@@ -217,7 +217,7 @@ minetest.register_tool("hangglider:hangglider", {
 			minetest.sound_play("bedsheet", {pos=pos, max_hear_distance = 8, gain = 1.0})
 			if HUD_Overlay then user:hud_change(hangglider.id[pname], "text", "glider_struts.png") end
 			local vel = user:get_player_velocity().y
-			if vel < -2 then  -- engage mid-air, falling fast, so stop but ramp velocity more quickly
+			if vel < -0.8 then  -- engage mid-air, falling fast, so stop but ramp velocity more quickly
 				hangglider.airbreak[pname] = true
 				user:set_physics_override({
 					gravity = 1,
