@@ -1,6 +1,7 @@
 License for Code
 ----------------
 Copyright (C) 2018 Piezo_
+Copyright (C) 2018 kestral246
 Copyright (C) 2016 cd2 (cdqwertz) <cdqwertz@gmail.com>
 
 This program is free software; you can redistribute it and/or
@@ -23,6 +24,7 @@ License for Media
 
 Textures:
 	glider_inventory.png: CC-BY-SA 3.0 UNPORTED. Created by cd2 (cdqwertz)
+	glider_struts.png: CC-BY-SA 3.0, Piezo_.
 	Default wood and wool textures from minetest-game.
 
 Models and sounds: 
