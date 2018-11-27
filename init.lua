@@ -213,6 +213,12 @@ minetest.register_tool("hangglider:hangglider", {
 })
 
 minetest.register_craft({
+	type = "shapeless",
+	output = "hangglider:hangglider",
+	recipe = {"default:paper", "default:paper", "default:paper", "default:paper", "hangglider:hangglider", "default:paper", "default:paper", "default:paper", "default:paper"},
+})
+
+minetest.register_craft({
 	output = "hangglider:hangglider",
 	recipe = {
 		{"wool:white", "wool:white", "wool:white"},
