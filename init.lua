@@ -41,6 +41,10 @@
 
 local HUD_Overlay = true --show glider struts as overlay on HUD
 local debug = false --show debug info in top-center of hud
+local moveModelUp = false
+if tonumber(string.sub(minetest.get_version().string, 1, 1)) and tonumber(string.sub(minetest.get_version().string, 1, 1)) > 4 then
+	moveModelUp = true
+end
 hangglider = {} --Make this global, so other mods can tell if hangglider exists.
 hangglider.use = {}
 if HUD_Overlay then
@@ -64,13 +68,17 @@ minetest.register_entity("hangglider:airstopper", { --A one-instant entity that 
 				if player:get_player_velocity().y < 0.5 and player:get_player_velocity().y > -0.5 then 
 					--Let go when the player actually stops, as that's the whole point.
 					if hangglider.use[pname] then
-						minetest.add_entity(player:get_pos(), "hangglider:glider"):set_attach(player, "", {x=0,y=0,z=0}, {x=0,y=0,z=0})
+						if moveModelUp then
+							minetest.add_entity(player:get_pos(), "hangglider:glider"):set_attach(player, "", {x=0,y=10,z=0}, {x=0,y=0,z=0})
+						else
+							minetest.add_entity(player:get_pos(), "hangglider:glider"):set_attach(player, "", {x=0,y=0,z=0}, {x=0,y=0,z=0})
+						end
 					end
 					canExist = false
 				end
 			end
 			if not canExist then
-				self.attach:set_detach()
+				player:set_detach()
 			end
 		end
 		if not canExist then
@@ -79,6 +87,22 @@ minetest.register_entity("hangglider:airstopper", { --A one-instant entity that 
 	end
 })
 
+if minetestd and minetestd.services.gravityctl.enabled then
+minetestd.gravityctl.register_gravity_effect("hangglider", 
+	function(player) 
+		return hangglider.use[player:get_player_name()] 
+	end,
+	function(gravity, player) 
+		local vel = player:get_player_velocity()
+		if debug then player:hud_change(hangglider.debug[pname].id, "text", vel.y..', '..player:get_physics_override().gravity..', '..tostring(hangglider.airbreak[pname])) end
+		return ((vel.y + 3)/20)
+	end,
+	7,
+	1000
+)
+end
+
+local step_v
 minetest.register_entity("hangglider:glider", {
 	visual = "mesh",
 	visual_size = {x = 12, y = 12},
@@ -98,19 +122,31 @@ minetest.register_entity("hangglider:glider", {
 					if mrn_name then
 						if not (mrn_name.walkable or (mrn_name.drowning and mrn_name.drowning == 1)) then
 							canExist = true
-							local vel = player:get_player_velocity()
+							step_v = player:get_player_velocity().y
+							if step_v < 0 then
+								player:set_physics_override({speed=math.abs(step_v/2) + 0.75})
+							else
+								player:set_physics_override({speed=1})
+							end
+							if not minetestd then
+								if debug then player:hud_change(hangglider.debug[pname].id, "text", step_v..', '..player:get_physics_override().gravity..', '..tostring(hangglider.airbreak[pname])) end
+								player:set_physics_override({gravity=((step_v + 3)/20)})
+							end
+							--[[local vel = player:get_player_velocity()
 							if debug then player:hud_change(hangglider.debug[pname].id, "text", vel.y..', '..grav..', '..tostring(hangglider.airbreak[pname])) end
 							
 							player:set_physics_override({gravity = (vel.y + 2.0)/20})
-						end
+						]]end
 					end
 				end
 				if not canExist then
 					player:set_physics_override({
-						gravity = 1,
 						jump = 1,
 						speed = 1,
 					})
+					if not minetestd then
+						player:set_physics_override({gravity=1})
+					end
 					hangglider.use[pname] = false
 					if HUD_Overlay then
 					player:hud_change(hangglider.id[pname], "text", "blank.png")
@@ -174,38 +210,44 @@ minetest.register_tool("hangglider:hangglider", {
 	description = "Glider",
 	inventory_image = "glider_item.png",
 	stack_max=1,
-	on_use = function(itemstack, user, pointed_thing)
-		if not user then
+	on_use = function(itemstack, player, pointed_thing)
+		if not player then
 			return
 		end
-		local pos = user:get_pos()
-		local pname = user:get_player_name()
+		local pos = player:get_pos()
+		local pname = player:get_player_name()
 		if minetest.get_node(pos).name == "air" and not hangglider.use[pname] then --Equip
 			minetest.sound_play("bedsheet", {pos=pos, max_hear_distance = 8, gain = 1.0})
-			if HUD_Overlay then user:hud_change(hangglider.id[pname], "text", "glider_struts.png") end
+			if HUD_Overlay then player:hud_change(hangglider.id[pname], "text", "glider_struts.png") end
 			local airbreak = false
-			local vel = user:get_player_velocity().y
+			local vel = player:get_player_velocity().y
 			if vel < -1.5 then  -- engage mid-air, falling fast, so stop but ramp velocity more quickly
 				--hangglider.airbreak[pname] = true
 				airbreak = true
 				local stopper = minetest.add_entity(pos, "hangglider:airstopper")
-				stopper:get_luaentity().attach = user
-				user:set_attach( stopper, "", {x=0,y=0,z=0}, {x=0,y=0,z=0})
+				minetest.after(0, function(stopper, player) --"Extreme Measures"
+					stopper:set_pos(player:get_pos())
+					stopper:get_luaentity().attach = player
+					player:set_attach( stopper, "", {x=0,y=0,z=0}, {x=0,y=0,z=0})
+				end, stopper, player)
 			end
-			user:set_physics_override({gravity = 0,jump=0,speed=1.75})
 			if not airbreak then 
-				
-				minetest.add_entity(user:get_pos(), "hangglider:glider"):set_attach(user, "", {x=0,y=0,z=0}, {x=0,y=0,z=0}) 
+				if moveModelUp then
+					minetest.add_entity(pos, "hangglider:glider"):set_attach(player, "", {x=0,y=10,z=0}, {x=0,y=0,z=0})
+				else
+					minetest.add_entity(pos, "hangglider:glider"):set_attach(player, "", {x=0,y=0,z=0}, {x=0,y=0,z=0})
+				end
 			end
 			hangglider.use[pname] = true
+			player:set_physics_override({jump = 0})
 			-- if minetest 0.4.x use this:
 			
 			-- if minetest 5.x use this:
-			-- minetest.add_entity(user:get_pos(), "hangglider:glider"):set_attach(user, "", {x=0,y=10,z=0}, {x=0,y=0,z=0})
+			-- minetest.add_entity(player:get_pos(), "hangglider:glider"):set_attach(player, "", {x=0,y=10,z=0}, {x=0,y=0,z=0})
 			itemstack:set_wear(itemstack:get_wear() + 255)
 			return itemstack
 		elseif hangglider.use[pname] then --Unequip
-			if HUD_Overlay then user:hud_change(hangglider.id[pname], "text", "blank.png") end
+			if HUD_Overlay then player:hud_change(hangglider.id[pname], "text", "default_wood.png^[colorize:#0000:255") end
 			hangglider.use[pname] = false
 		end
 	end,
