@@ -121,7 +121,7 @@ minetest.register_entity("hangglider:glider", {
 				if hangglider.use[pname] then
 					local mrn_name = minetest.registered_nodes[minetest.get_node(vector.new(pos.x, pos.y-0.5, pos.z)).name]
 					if mrn_name then
-						if not (mrn_name.walkable or mrn_name.liquidtype) then
+						if not (mrn_name.walkable or mrn_name.liquidtype ~= "none") then
 							canExist = true
 							step_v = player:get_player_velocity().y
 							if step_v < 0 and step_v > -3 then
