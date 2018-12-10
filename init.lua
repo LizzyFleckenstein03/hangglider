@@ -37,7 +37,8 @@
 -- Improved gravity adjustment function.
 -- Changed airbreaking process 
 -- Removed airbreak penalty, as any 'advantage' seems minimal after new adjustments
-
+-- Removed airbreak until minetest devs are smart enough to implement better serverside players.
+-- Simplified liquid check.
 
 -- Modifications by gpcf
 -- 2018-12-09
@@ -59,7 +60,7 @@ hangglider.id = {}  -- hud id for displaying overlay with struts
 end
 if debug then  hangglider.debug = {} end -- hud id for debug data
 --hangglider.airbreak = {}  -- true if falling fast when equip
-
+--[[
 minetest.register_entity("hangglider:airstopper", { --A one-instant entity that catches the player and stops them.
 	is_visible = false,
 	physical = false,
@@ -92,7 +93,7 @@ minetest.register_entity("hangglider:airstopper", { --A one-instant entity that 
 			self.object:remove()
 		end
 	end
-})
+})]]
 
 if areas then
 	hangglider.flak = true
@@ -174,11 +175,13 @@ minetest.register_entity("hangglider:glider", {
 				if hangglider.use[pname] then
 					local mrn_name = minetest.registered_nodes[minetest.get_node(vector.new(pos.x, pos.y-0.5, pos.z)).name]
 					if mrn_name then
-						if not (mrn_name.walkable or (mrn_name.drowning and mrn_name.drowning == 1)) then
+						if not (mrn_name.walkable or mrn_name.liquidtype ~= "none") then
 							canExist = true
 							step_v = player:get_player_velocity().y
-							if step_v < 0 then
+							if step_v < 0 and step_v > -3 then
 								player:set_physics_override({speed=math.abs(step_v/2) + 0.75})
+							elseif step_v <= -3 then --Cap our gliding movement speed.
+								player:set_physics_override({speed=2.25})
 							else
 								player:set_physics_override({speed=1})
 							end
@@ -289,7 +292,7 @@ minetest.register_tool("hangglider:hangglider", {
 			if HUD_Overlay then player:hud_change(hangglider.id[pname], "text", "glider_struts.png") end
 			local airbreak = false
 			local vel = player:get_player_velocity().y
-			if vel < -1.5 then  -- engage mid-air, falling fast, so stop but ramp velocity more quickly
+			--[[if vel < -1.5 then  -- engage mid-air, falling fast, so stop but ramp velocity more quickly
 				--hangglider.airbreak[pname] = true
 				airbreak = true
 				local stopper = minetest.add_entity(pos, "hangglider:airstopper")
@@ -298,7 +301,7 @@ minetest.register_tool("hangglider:hangglider", {
 					stopper:get_luaentity().attach = player
 					player:set_attach( stopper, "", {x=0,y=0,z=0}, {x=0,y=0,z=0})
 				end, stopper, player)
-			end
+			end]]
 			if not airbreak then 
 				if moveModelUp then
 					minetest.add_entity(pos, "hangglider:glider"):set_attach(player, "", {x=0,y=10,z=0}, {x=0,y=0,z=0})
