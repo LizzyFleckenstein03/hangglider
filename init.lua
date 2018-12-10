@@ -126,7 +126,7 @@ minetest.register_entity("hangglider:glider", {
 							step_v = player:get_player_velocity().y
 							if step_v < 0 and step_v > -3 then
 								player:set_physics_override({speed=math.abs(step_v/2) + 0.75})
-							elseif step_v <= -3 then --Cap our fall speed.
+							elseif step_v <= -3 then --Cap our gliding movement speed.
 								player:set_physics_override({speed=2.25})
 							else
 								player:set_physics_override({speed=1})
