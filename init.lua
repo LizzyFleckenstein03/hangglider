@@ -219,7 +219,7 @@ minetest.register_tool("hangglider:hangglider", {
 		end
 		local pos = player:get_pos()
 		local pname = player:get_player_name()
-		if minetest.get_node(pos).name == "air" and not hangglider.use[pname] then --Equip
+		if not hangglider.use[pname] then --Equip
 			minetest.sound_play("bedsheet", {pos=pos, max_hear_distance = 8, gain = 1.0})
 			if HUD_Overlay then player:hud_change(hangglider.id[pname], "text", "glider_struts.png") end
 			local airbreak = false
