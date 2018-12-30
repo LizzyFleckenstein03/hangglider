@@ -45,6 +45,10 @@
 -- get shot down while flying over protected areas marked as no-fly-zones (flak, from German Flugabwehrkanone)
 --  set these areas with the /area_flak command
 
+-- Modifications by SpaghettiToastBook
+-- 2018-12-29
+-- Physics overrides use player_monoids mod if available
+
 
 
 local HUD_Overlay = true --show glider struts as overlay on HUD
@@ -163,6 +167,31 @@ hangglider.shot_sound = function (pos)
 	})
 end
 
+local physics_attrs = {"jump", "speed", "gravity"}
+local function apply_physics_override(player, overrides)
+    if player_monoids then
+        for _, attr in pairs(physics_attrs) do
+            if overrides[attr] then
+                player_monoids[attr]:add_change(player, overrides[attr], "hangglider:glider")
+            end
+        end
+    else
+        player:set_physics_override(overrides)
+    end
+end
+
+local function remove_physics_override(player, overrides)
+    for _, attr in pairs(physics_attrs) do
+        if overrides[attr] then
+            if player_monoids then
+                player_monoids[attr]:del_change(player, "hangglider:glider")
+            else
+                player:set_physics_override({[attr] = 1})
+            end
+        end
+    end
+end
+
 local step_v
 minetest.register_entity("hangglider:glider", {
 	visual = "mesh",
@@ -185,15 +214,15 @@ minetest.register_entity("hangglider:glider", {
 							canExist = true
 							step_v = player:get_player_velocity().y
 							if step_v < 0 and step_v > -3 then
-								player:set_physics_override({speed=math.abs(step_v/2) + 0.75})
+								apply_physics_override(player, {speed=math.abs(step_v/2) + 0.75})
 							elseif step_v <= -3 then --Cap our gliding movement speed.
-								player:set_physics_override({speed=2.25})
+								apply_physics_override(player, {speed=2.25})
 							else
-								player:set_physics_override({speed=1})
+								remove_physics_override(player, {speed=1})
 							end
 							if not minetestd then
 								if debug then player:hud_change(hangglider.debug[pname].id, "text", step_v..', '..player:get_physics_override().gravity..', '..tostring(hangglider.airbreak[pname])) end
-								player:set_physics_override({gravity=((step_v + 3)/20)})
+								apply_physics_override(player, {gravity=((step_v + 3)/20)})
 							end
 							--[[local vel = player:get_player_velocity()
 							if debug then player:hud_change(hangglider.debug[pname].id, "text", vel.y..', '..grav..', '..tostring(hangglider.airbreak[pname])) end
@@ -217,12 +246,12 @@ minetest.register_entity("hangglider:glider", {
 				    end
 				end
 				if not canExist then
-					player:set_physics_override({
+					remove_physics_override(player, {
 						jump = 1,
 						speed = 1,
 					})
 					if not minetestd then
-						player:set_physics_override({gravity=1})
+						remove_physics_override(player, {gravity=1})
 					end
 					hangglider.use[pname] = false
 					if HUD_Overlay then
@@ -240,7 +269,7 @@ minetest.register_entity("hangglider:glider", {
 })
 
 minetest.register_on_dieplayer(function(player)
-	player:set_physics_override({
+	remove_physics_override(player, {
 		gravity = 1,
 		jump = 1,
 	})
@@ -250,7 +279,7 @@ end)
 
 minetest.register_on_joinplayer(function(player)
 	local pname = player:get_player_name()
-	player:set_physics_override({
+	remove_physics_override(player, {
 		gravity = 1,
 		jump = 1,
 	})
@@ -316,7 +345,7 @@ minetest.register_tool("hangglider:hangglider", {
 				end
 			end
 			hangglider.use[pname] = true
-			player:set_physics_override({jump = 0})
+			apply_physics_override(player, {jump = 0})
 			-- if minetest 0.4.x use this:
 			
 			-- if minetest 5.x use this:
