@@ -2,3 +2,4 @@ default
 wool
 minetest_systemd?
 areas?
+player_monoids?
