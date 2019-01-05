@@ -196,6 +196,7 @@ local step_v
 minetest.register_entity("hangglider:glider", {
 	visual = "mesh",
 	visual_size = {x = 12, y = 12},
+	collisionbox = {0,0,0,0,0,0},
 	mesh = "glider.obj",
 	immortal = true,
 	static_save = false,
