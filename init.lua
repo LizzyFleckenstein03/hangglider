@@ -124,18 +124,23 @@ if areas then
 	})
 end
 
-if minetestd and minetestd.services.gravityctl.enabled then
-minetestd.gravityctl.register_gravity_effect("hangglider", 
-	function(player) 
+if minetestd and minetestd.services.physicsctl.enabled then
+minetestd.physicsctl.register_physics_effect("hangglider", 
+	function(player) -- check
 		return hangglider.use[player:get_player_name()] 
 	end,
-	function(gravity, player) 
-		local vel = player:get_player_velocity()
-		if debug then player:hud_change(hangglider.debug[pname].id, "text", vel.y..', '..player:get_physics_override().gravity..', '..tostring(hangglider.airbreak[pname])) end
-		return ((vel.y + 3)/20)
+	function(phys, player) -- blend
+		local vel_y = player:get_player_velocity().y
+		if debug then player:hud_change(hangglider.debug[pname].id, "text", vel_y..', '..player:get_physics_override().gravity..', '..tostring(hangglider.airbreak[pname])) end
+		phys.gravity = phys.gravity*((vel_y + 3)/20)
+		if vel_y < 0 and vel_y > -3 then
+			phys.speed = phys.speed*(math.abs(vel_y/2) + 0.75)
+		elseif vel_y <= -3 then --Cap our gliding movement speed.
+			phys.speed = phys.speed*2.25
+		end
+		
 	end,
-	7,
-	1000
+	7 -- effect order
 )
 end
 
@@ -213,15 +218,16 @@ minetest.register_entity("hangglider:glider", {
 					if mrn_name then
 						if not (mrn_name.walkable or mrn_name.liquidtype ~= "none") then
 							canExist = true
-							step_v = player:get_player_velocity().y
-							if step_v < 0 and step_v > -3 then
-								apply_physics_override(player, {speed=math.abs(step_v/2) + 0.75})
-							elseif step_v <= -3 then --Cap our gliding movement speed.
-								apply_physics_override(player, {speed=2.25})
-							else
-								remove_physics_override(player, {speed=1})
-							end
+							
 							if not minetestd then
+								step_v = player:get_player_velocity().y
+								if step_v < 0 and step_v > -3 then
+									apply_physics_override(player, {speed=math.abs(step_v/2) + 0.75})
+								elseif step_v <= -3 then --Cap our gliding movement speed.
+									apply_physics_override(player, {speed=2.25})
+								else
+									remove_physics_override(player, {speed=1})
+								end
 								if debug then player:hud_change(hangglider.debug[pname].id, "text", step_v..', '..player:get_physics_override().gravity..', '..tostring(hangglider.airbreak[pname])) end
 								apply_physics_override(player, {gravity=((step_v + 3)/20)})
 							end
@@ -247,12 +253,12 @@ minetest.register_entity("hangglider:glider", {
 				    end
 				end
 				if not canExist then
-					remove_physics_override(player, {
-						jump = 1,
-						speed = 1,
-					})
+					
 					if not minetestd then
-						remove_physics_override(player, {gravity=1})
+						remove_physics_override(player, {
+						gravity=1,
+						jump = 1,
+						speed = 1,})
 					end
 					hangglider.use[pname] = false
 					if HUD_Overlay then
