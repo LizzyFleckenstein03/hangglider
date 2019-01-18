@@ -134,11 +134,11 @@ minetestd.physicsctl.register_physics_effect("hangglider",
 		if debug then player:hud_change(hangglider.debug[pname].id, "text", vel_y..', '..player:get_physics_override().gravity..', '..tostring(hangglider.airbreak[pname])) end
 		phys.gravity = phys.gravity*((vel_y + 3)/20)
 		if vel_y < 0 and vel_y > -3 then
-			phys.speed = phys.speed*(math.abs(vel_y/2) + 0.75)
+			phys.speed = (math.abs(vel_y/2) + 0.75)
 		elseif vel_y <= -3 then --Cap our gliding movement speed.
 			phys.speed = phys.speed*2.25
 		end
-		
+		phys.jump = 0
 	end,
 	7 -- effect order
 )
@@ -166,9 +166,9 @@ end
 
 hangglider.shot_sound = function (pos)
 	minetest.sound_play("hangglider_flak_shot", {
-							pos = pos,
-							max_hear_distance = 30,
-							gain = 10.0,
+		pos = pos,
+		max_hear_distance = 30,
+		gain = 10.0,
 	})
 end
 
