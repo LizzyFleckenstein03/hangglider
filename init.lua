@@ -99,7 +99,7 @@ minetest.register_entity("hangglider:airstopper", { --A one-instant entity that 
 	end
 })]]
 
-if areas then
+if core.global_exists("areas") then
 	hangglider.flak = true
 	-- chat command definition essentially copied from areas mod.
 	minetest.register_chatcommand("area_flak",{
@@ -124,7 +124,7 @@ if areas then
 	})
 end
 
-if minetestd and minetestd.services.physicsctl.enabled then
+if core.global_exists("minetestd") and minetestd.services.physicsctl.enabled then
 minetestd.physicsctl.register_physics_effect("hangglider",
 	function(player) -- check
 		return hangglider.use[player:get_player_name()]
@@ -188,7 +188,7 @@ end
 local function remove_physics_override(player, overrides)
     for _, attr in pairs(physics_attrs) do
         if overrides[attr] then
-            if player_monoids then
+            if core.global_exists("player_monoids") then
                 player_monoids[attr]:del_change(player, "hangglider:glider")
             else
                 player:set_physics_override({[attr] = 1})
