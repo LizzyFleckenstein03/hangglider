@@ -35,7 +35,7 @@
 -- Reduced airbreak penalty severity
 -- gave glider limited durability.
 -- Improved gravity adjustment function.
--- Changed airbreaking process 
+-- Changed airbreaking process
 -- Removed airbreak penalty, as any 'advantage' seems minimal after new adjustments
 -- Removed airbreak until minetest devs are smart enough to implement better serverside players.
 -- Simplified liquid check.
@@ -77,7 +77,7 @@ minetest.register_entity("hangglider:airstopper", { --A one-instant entity that 
 			if player:is_player() then
 				local pname = player:get_player_name()
 				canExist = true
-				if player:get_player_velocity().y < 0.5 and player:get_player_velocity().y > -0.5 then 
+				if player:get_player_velocity().y < 0.5 and player:get_player_velocity().y > -0.5 then
 					--Let go when the player actually stops, as that's the whole point.
 					if hangglider.use[pname] then
 						if moveModelUp then
@@ -99,7 +99,7 @@ minetest.register_entity("hangglider:airstopper", { --A one-instant entity that 
 	end
 })]]
 
-if areas then
+if core.global_exists("areas") then
 	hangglider.flak = true
 	-- chat command definition essentially copied from areas mod.
 	minetest.register_chatcommand("area_flak",{
@@ -110,7 +110,7 @@ if areas then
 			if not id then
 				return false, "Invalid usage, see /help area_flak."
 			end
-			
+
 			if not areas:isAreaOwner(id, name) then
 				return false, "Area "..id.." does not exist"
 					.." or is not owned by you."
@@ -124,10 +124,10 @@ if areas then
 	})
 end
 
-if minetestd and minetestd.services.physicsctl.enabled then
-minetestd.physicsctl.register_physics_effect("hangglider", 
+if core.global_exists("minetestd") and minetestd.services.physicsctl.enabled then
+minetestd.physicsctl.register_physics_effect("hangglider",
 	function(player) -- check
-		return hangglider.use[player:get_player_name()] 
+		return hangglider.use[player:get_player_name()]
 	end,
 	function(phys, player) -- blend
 		local vel_y = player:get_player_velocity().y
@@ -152,8 +152,8 @@ hangglider.can_fly = function (pname, pos)
 			return (minetest.check_player_privs(pname, {protection_bypass=true}) or wardzones.checkPlayerZoneAccess(pname, zone) or not zone["data"]["no_fly"])
 		end
 	end
-	if areas and minetest.is_protected(vector.round(pos), pname) then 
-		if hangglider.flak then 
+	if areas and minetest.is_protected(vector.round(pos), pname) then
+		if hangglider.flak then
 			for id, area in pairs(areas:getAreasAtPos(pos)) do
 				if area.flak then
 					return false
@@ -188,7 +188,7 @@ end
 local function remove_physics_override(player, overrides)
     for _, attr in pairs(physics_attrs) do
         if overrides[attr] then
-            if player_monoids then
+            if core.global_exists("player_monoids") then
                 player_monoids[attr]:del_change(player, "hangglider:glider")
             else
                 player:set_physics_override({[attr] = 1})
@@ -218,7 +218,7 @@ minetest.register_entity("hangglider:glider", {
 					if mrn_name then
 						if not (mrn_name.walkable or mrn_name.liquidtype ~= "none") then
 							canExist = true
-							
+
 							if not minetestd then
 								step_v = player:get_player_velocity().y
 								if step_v < 0 and step_v > -3 then
@@ -233,7 +233,7 @@ minetest.register_entity("hangglider:glider", {
 							end
 							--[[local vel = player:get_player_velocity()
 							if debug then player:hud_change(hangglider.debug[pname].id, "text", vel.y..', '..grav..', '..tostring(hangglider.airbreak[pname])) end
-							
+
 							player:set_physics_override({gravity = (vel.y + 2.0)/20})
 						]]end
 					end
@@ -253,7 +253,7 @@ minetest.register_entity("hangglider:glider", {
 				    end
 				end
 				if not canExist then
-					
+
 					if not minetestd then
 						remove_physics_override(player, {
 						gravity=1,
@@ -268,9 +268,9 @@ minetest.register_entity("hangglider:glider", {
 				end
 			end
 		end
-		if not canExist then 
+		if not canExist then
 			self.object:set_detach()
-			self.object:remove() 
+			self.object:remove()
 		end
 	end
 })
@@ -300,7 +300,7 @@ minetest.register_on_joinplayer(function(player)
 		alignment = {x=1, y=1},
 		offset = {x=0, y=0}
 	}) end
-	if debug then 
+	if debug then
 		hangglider.debug[pname] = {id = player:hud_add({hud_elem_type = "text",
 			position = {x=0.5, y=0.1},
 			text = "-",
@@ -344,7 +344,7 @@ minetest.register_tool("hangglider:hangglider", {
 					player:set_attach( stopper, "", {x=0,y=0,z=0}, {x=0,y=0,z=0})
 				end, stopper, player)
 			end]]
-			if not airbreak then 
+			if not airbreak then
 				if moveModelUp then
 					minetest.add_entity(pos, "hangglider:glider"):set_attach(player, "", {x=0,y=10,z=0}, {x=0,y=0,z=0})
 				else
@@ -354,7 +354,7 @@ minetest.register_tool("hangglider:hangglider", {
 			hangglider.use[pname] = true
 			apply_physics_override(player, {jump = 0})
 			-- if minetest 0.4.x use this:
-			
+
 			-- if minetest 5.x use this:
 			-- minetest.add_entity(player:get_pos(), "hangglider:glider"):set_attach(player, "", {x=0,y=10,z=0}, {x=0,y=0,z=0})
 			itemstack:set_wear(itemstack:get_wear() + 255)
