@@ -136,7 +136,7 @@ minetestd.physicsctl.register_physics_effect("hangglider",
 		if vel_y < 0 and vel_y > -3 then
 			phys.speed = (math.abs(vel_y/2) + 0.75)
 		elseif vel_y <= -3 then --Cap our gliding movement speed.
-			phys.speed = phys.speed*2.25
+			phys.speed = 2.25
 		end
 		phys.jump = 0
 	end,
