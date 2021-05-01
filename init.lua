@@ -172,29 +172,39 @@ hangglider.shot_sound = function (pos)
 	})
 end
 
+local function set_fast(name, value)
+	local privs = minetest.get_player_privs(name)
+	privs.fast = value
+	minetest.set_player_privs(name, privs)
+end
+
 local physics_attrs = {"jump", "speed", "gravity"}
 local function apply_physics_override(player, overrides)
-    if player_monoids then
-        for _, attr in pairs(physics_attrs) do
-            if overrides[attr] then
-                player_monoids[attr]:add_change(player, overrides[attr], "hangglider:glider")
-            end
-        end
-    else
-        player:set_physics_override(overrides)
-    end
+	if player_monoids then
+		for _, attr in pairs(physics_attrs) do
+			if overrides[attr] then
+				player_monoids[attr]:add_change(player, overrides[attr], "hangglider:glider")
+			end
+		end
+	else
+		player:set_physics_override(overrides)
+	end
+	if minetest.settings:get_bool("hangglider_no_fast") then
+		set_fast(player:get_player_name(), nil)
+	end
 end
 
 local function remove_physics_override(player, overrides)
-    for _, attr in pairs(physics_attrs) do
-        if overrides[attr] then
-            if core.global_exists("player_monoids") then
-                player_monoids[attr]:del_change(player, "hangglider:glider")
-            else
-                player:set_physics_override({[attr] = 1})
-            end
-        end
-    end
+	for _, attr in pairs(physics_attrs) do
+		if overrides[attr] then
+			if core.global_exists("player_monoids") then
+				player_monoids[attr]:del_change(player, "hangglider:glider")
+			else
+				player:set_physics_override({[attr] = 1})
+			end
+		end
+	end
+	set_fast(player:get_player_name(), true)
 end
 
 local step_v
@@ -239,18 +249,18 @@ minetest.register_entity("hangglider:glider", {
 					end
 				end
 				if not hangglider.can_fly(pname,pos) then
-				    if not self.warned then -- warning shot
+					if not self.warned then -- warning shot
 						self.warned = 0
 						hangglider.shot_sound(pos)
 						minetest.chat_send_player(pname, "Protected area! You will be shot down in two seconds by anti-aircraft guns!")
-				    end
-				    self.warned = self.warned + dtime
-				    if self.warned > 2 then -- shoot down
+					end
+					self.warned = self.warned + dtime
+					if self.warned > 2 then -- shoot down
 						player:set_hp(1)
 						player:get_inventory():remove_item("main", ItemStack("hangglider:hangglider"))
 						hangglider.shot_sound(pos)
 						canExist = false
-				    end
+					end
 				end
 				if not canExist then
 
